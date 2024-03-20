@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Configure CMake
-        run: cmake -S . -B build
+        run: cmake -S .. -B build
 
       - name: Build
         run: cmake --build build --config Release
