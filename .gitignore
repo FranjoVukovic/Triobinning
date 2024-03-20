@@ -1,6 +1,9 @@
 /build
+/external/genomes
+/external/seqrequester
+/external/googletest
 /external
-/tests
+
 
 *.sh
 .vscode
