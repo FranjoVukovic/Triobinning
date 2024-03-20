@@ -13,12 +13,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up CMake
-        uses: lukka/get-cmake@v1
-
       - name: Configure CMake
         run: cmake -S . -B build
 
