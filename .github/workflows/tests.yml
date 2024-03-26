@@ -12,6 +12,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    env:
+      TRIOBINNING_PATH: ${{ github.workspace }}/tests/data/
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2

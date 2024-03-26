@@ -20,11 +20,15 @@ public:
 TEST(MyTest, MyFirstTest) { EXPECT_EQ(1, 1); }
 
 TEST(MyTest, MySecondTest) {
-  string pathRef = "/mnt/c/Users/vukov/Desktop/FER/CandC++/Triobinning/"
-                   "external/genomes/ecoli.fna";
+  const char *triobinningPath = getenv("TRIOBINNING_PATH");
+  if (!triobinningPath) {
+    FAIL() << "TRIOBINNING_PATH environment variable is not set";
+    return;
+  }
+
+  string pathRef = string(triobinningPath) + "ecoli_reads.fastq";
   auto p1 =
       bioparser::Parser<Sequence>::Create<bioparser::FastaParser>(pathRef);
   auto ref = p1->Parse(-1);
-  const Sequence &refrence = *ref[0];
-  EXPECT_EQ(refrence.name, "NC_000913.3");
+  EXPECT_EQ(ref.size(), 2);
 }

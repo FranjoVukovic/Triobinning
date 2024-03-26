@@ -8,7 +8,7 @@
 
 using namespace std;
 const string path =
-    std::getenv("TRIOBINNING_PATH") ? std::getenv("TRIOBINNING_PATH") : ".";
+    getenv("TRIOBINNING_PATH") ? getenv("TRIOBINNING_PATH") : ".";
 
 struct Sequence {
 public:
@@ -23,7 +23,7 @@ public:
 };
 
 int main() {
-  string pathRef = path + "external/genomes/ecoli.fna";
+  string pathRef = path + "ecoli.fna";
   auto p1 =
       bioparser::Parser<Sequence>::Create<bioparser::FastaParser>(pathRef);
   auto ref = p1->Parse(-1);
