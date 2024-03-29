@@ -82,29 +82,30 @@ find_package(GTest 1.14.0 QUIET)
     endif ()
   endif ()
 
-  add_library(Triobinning
-    src/place_holder.cpp)
+add_library(Triobinning
+  src/kmer_maker.cpp)
 
-  target_link_libraries(Triobinning
-  biosoup::biosoup
-  bioparser::bioparser
-  thread_pool::thread_pool)
+target_link_libraries(Triobinning
+biosoup::biosoup
+bioparser::bioparser
+thread_pool::thread_pool)
 
-  target_include_directories(Triobinning PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
+target_include_directories(Triobinning PUBLIC
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
 
-  add_executable(triobinning_exe src/main.cpp)
-  target_link_libraries(triobinning_exe Triobinning)
+add_executable(triobinning_exe src/main.cpp)
+target_link_libraries(triobinning_exe Triobinning)
 
-  set_property(TARGET triobinning_exe PROPERTY OUTPUT_NAME Triobinning)
+target_compile_definitions(Triobinning PUBLIC TRIOBINNING_VERSION="${PROJECT_VERSION}")
+set_property(TARGET triobinning_exe PROPERTY OUTPUT_NAME Triobinning)
 
-  install(TARGETS triobinning_exe DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS triobinning_exe DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-  enable_testing()
-  add_executable(triobinning_test tests/my_test.cpp)
-  target_link_libraries(triobinning_test 
-  Triobinning 
-  bioparser::bioparser
-  GTest::Main)
+enable_testing()
+add_executable(triobinning_test tests/my_test.cpp)
+target_link_libraries(triobinning_test 
+Triobinning 
+bioparser::bioparser
+GTest::Main)
 
-  gtest_discover_tests(triobinning_test)
+gtest_discover_tests(triobinning_test)
