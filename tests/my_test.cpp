@@ -38,7 +38,7 @@ TEST(MakingKmers, NonThreaded) {
   EXPECT_EQ(map.size(), 20164);
 }
 
-TEST(MakingKmers, Threaded) {
+TEST(MakingKmers, OnceThreaded) {
   const char *triobinningPath = getenv("TRIOBINNING_PATH");
   if (!triobinningPath) {
     FAIL() << "TRIOBINNING_PATH environment variable is not set";
@@ -51,6 +51,23 @@ TEST(MakingKmers, Threaded) {
   auto ref = p1->Parse(-1);
 
   auto map = kmer::parallel_kmer(ref, 31, 1);
+
+  EXPECT_EQ(map.size(), 20164);
+}
+
+TEST(MakingKmers, MultiThreaded) {
+  const char *triobinningPath = getenv("TRIOBINNING_PATH");
+  if (!triobinningPath) {
+    FAIL() << "TRIOBINNING_PATH environment variable is not set";
+    return;
+  }
+
+  string pathRef = string(triobinningPath) + "ecoli_reads.fastq";
+  auto p1 =
+      bioparser::Parser<seq::Sequence>::Create<bioparser::FastaParser>(pathRef);
+  auto ref = p1->Parse(-1);
+
+  auto map = kmer::parallel_kmer(ref, 31, 4);
 
   EXPECT_EQ(map.size(), 20164);
 }
