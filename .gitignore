@@ -6,3 +6,6 @@
 .vscode
 
 mutate.py
+
+/src/.ipynb_checkpoints
+/src/output.csv
