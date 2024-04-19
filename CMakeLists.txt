@@ -83,7 +83,8 @@ find_package(GTest 1.14.0 QUIET)
   endif ()
 
 add_library(Triobinning
-  src/kmer_maker.cpp)
+  src/kmer_maker.cpp
+  src/kmer_finder.cpp)
 
 target_link_libraries(Triobinning
 biosoup::biosoup
