@@ -10,6 +10,7 @@
 #include <thread_pool/thread_pool.hpp>
 #include <unordered_map>
 #include <vector>
+#include <set>
 
 using namespace std;
 
@@ -36,6 +37,18 @@ unsigned int returnHash(vector<uint64_t> list, unsigned int kmer_length) {
     concatenated_number += to_string(num);
   }
   return invertibleHash(stoull(concatenated_number));
+}
+
+set<unsigned int> kmer_maker_set(std::string genome, unsigned int kmer_length) {
+  set<unsigned int> kmer_set;
+  for (unsigned int i = 0; i < genome.size() - kmer_length + 1; i++) {
+    string kmer = genome.substr(i, kmer_length);
+    biosoup::NucleicAcid na("name", kmer);
+    auto list = na.deflated_data;
+    unsigned int hash = returnHash(list, kmer_length);
+    kmer_set.insert(hash);
+  }
+  return kmer_set;
 }
 
 unordered_map<unsigned int, unsigned int>

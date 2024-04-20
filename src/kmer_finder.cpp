@@ -11,13 +11,13 @@
 
 namespace kmer {
 
-unordered_map<unsigned int, std::string>
+unordered_map<std::string, std::string>
 parallel_finder(vector<unique_ptr<seq::Sequence>> &ref,
                 unsigned int kmer_length, unsigned int num_threads,
                 set<int> &difference1, set<int> &difference2) {
 
-  unordered_map<unsigned int, std::string> kmer_map;
-  vector<future<unordered_map<unsigned int, std::string>>> thread_features;
+  unordered_map<std::string, std::string> kmer_map;
+  vector<future<unordered_map<std::string, std::string>>> thread_features;
   shared_ptr<thread_pool::ThreadPool> thread_pool_ =
       make_shared<thread_pool::ThreadPool>(num_threads);
 
@@ -31,39 +31,42 @@ parallel_finder(vector<unique_ptr<seq::Sequence>> &ref,
 
   for (uint32_t i = 0; i < num_threads; ++i) {
     thread_features.emplace_back(
-        thread_pool_->Submit([&ref_copy, kmer_length, i, num_threads, part_size,
+        thread_pool_->Submit([&ref, kmer_length, i, num_threads, part_size,
                               difference1, difference2]() {
           size_t start_idx = i * part_size;
-          size_t end_idx = (i == num_threads - 1) ? ref_copy.size()
+          size_t end_idx = (i == num_threads - 1) ? ref.size()
                                                   : (start_idx + part_size);
-          unordered_map<unsigned int, std::string> kmer_maps;
+          unordered_map<std::string, std::string> kmer_maps;
           vector<unique_ptr<seq::Sequence>> part_ref(
-              make_move_iterator(ref_copy.begin() + start_idx),
-              make_move_iterator(ref_copy.begin() + end_idx));
-          auto map = kmer::kmer_maker(part_ref, kmer_length);
-          for (auto &it : map) {
-            if (difference1.find(it.first) != difference1.end()) {
-              kmer_maps[it.first] = "original";
-            }
-            if (difference2.find(it.first) != difference2.end()) {
-              kmer_maps[it.first] = "mutated";
+              make_move_iterator(ref.begin() + start_idx),
+              make_move_iterator(ref.begin() + end_idx));
+          
+          for (auto &seq : part_ref) {
+            auto set = kmer_maker_set(seq->genome, kmer_length);
+            std::string name = seq->name;
+            for (auto &it : set) {
+              if (difference1.find(it) != difference1.end()) {
+                kmer_maps[name] = "original";
+                break;
+              }
+              else if (difference2.find(it) != difference2.end()) {
+                kmer_maps[name] = "mutated";
+                break;
+              } else {
+                kmer_maps[name] = "unknown";
+              }
             }
           }
+
           return kmer_maps;
         }));
   }
 
   for (auto &thread_feature : thread_features) {
     auto thread_kmer_map = thread_feature.get();
-    int count = 0;
-    for (auto &it : thread_kmer_map) {
-      std::cout << it.first << " " << it.second << std::endl;
-      count++;
-      if (count > 10) {
-        break;
-      }
-    }
+    kmer_map.insert(thread_kmer_map.begin(), thread_kmer_map.end());
   }
+  cout << endl << "Number of kmers: " << kmer_map.size() << endl;
   return kmer_map;
 }
 
