@@ -23,24 +23,18 @@ parallel_finder(vector<unique_ptr<seq::Sequence>> &ref,
 
   const size_t part_size = ref.size() / num_threads;
 
-  vector<unique_ptr<seq::Sequence>> ref_copy;
-  ref_copy.reserve(ref.size());
-  for (const auto &seq : ref) {
-    ref_copy.push_back(make_unique<seq::Sequence>(*seq));
-  }
-
   for (uint32_t i = 0; i < num_threads; ++i) {
     thread_features.emplace_back(
         thread_pool_->Submit([&ref, kmer_length, i, num_threads, part_size,
                               difference1, difference2]() {
           size_t start_idx = i * part_size;
-          size_t end_idx = (i == num_threads - 1) ? ref.size()
-                                                  : (start_idx + part_size);
+          size_t end_idx =
+              (i == num_threads - 1) ? ref.size() : (start_idx + part_size);
           unordered_map<std::string, std::string> kmer_maps;
           vector<unique_ptr<seq::Sequence>> part_ref(
               make_move_iterator(ref.begin() + start_idx),
               make_move_iterator(ref.begin() + end_idx));
-          
+
           for (auto &seq : part_ref) {
             auto set = kmer_maker_set(seq->genome, kmer_length);
             std::string name = seq->name;
@@ -48,8 +42,7 @@ parallel_finder(vector<unique_ptr<seq::Sequence>> &ref,
               if (difference1.find(it) != difference1.end()) {
                 kmer_maps[name] = "original";
                 break;
-              }
-              else if (difference2.find(it) != difference2.end()) {
+              } else if (difference2.find(it) != difference2.end()) {
                 kmer_maps[name] = "mutated";
                 break;
               } else {
