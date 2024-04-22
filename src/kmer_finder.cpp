@@ -11,13 +11,13 @@
 
 namespace kmer {
 
-unordered_map<std::string, std::string>
+unordered_map<std::string, unsigned int>
 parallel_finder(vector<unique_ptr<seq::Sequence>> &ref,
                 unsigned int kmer_length, unsigned int num_threads,
                 set<int> &difference1, set<int> &difference2) {
 
-  unordered_map<std::string, std::string> kmer_map;
-  vector<future<unordered_map<std::string, std::string>>> thread_features;
+  unordered_map<std::string, unsigned int> kmer_map;
+  vector<future<unordered_map<std::string, unsigned int>>> thread_features;
   shared_ptr<thread_pool::ThreadPool> thread_pool_ =
       make_shared<thread_pool::ThreadPool>(num_threads);
 
@@ -26,11 +26,11 @@ parallel_finder(vector<unique_ptr<seq::Sequence>> &ref,
   for (uint32_t i = 0; i < num_threads; ++i) {
     thread_features.emplace_back(
         thread_pool_->Submit([&ref, kmer_length, i, num_threads, part_size,
-                              difference1, difference2]() {
+                              &difference1, &difference2]() {
           size_t start_idx = i * part_size;
           size_t end_idx =
               (i == num_threads - 1) ? ref.size() : (start_idx + part_size);
-          unordered_map<std::string, std::string> kmer_maps;
+          unordered_map<std::string, unsigned int> kmer_maps;
           vector<unique_ptr<seq::Sequence>> part_ref(
               make_move_iterator(ref.begin() + start_idx),
               make_move_iterator(ref.begin() + end_idx));
@@ -40,13 +40,13 @@ parallel_finder(vector<unique_ptr<seq::Sequence>> &ref,
             std::string name = seq->name;
             for (auto &it : set) {
               if (difference1.find(it) != difference1.end()) {
-                kmer_maps[name] = "original";
+                kmer_maps[name] = 0;
                 break;
               } else if (difference2.find(it) != difference2.end()) {
-                kmer_maps[name] = "mutated";
+                kmer_maps[name] = 1;
                 break;
               } else {
-                kmer_maps[name] = "unknown";
+                kmer_maps[name] = 2;
               }
             }
           }
