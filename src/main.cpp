@@ -37,7 +37,7 @@ int main() {
 
   // Get all the kmers and write them to a file and a set
   auto map = kmer::parallel_kmer(ref, KMER_LENGTH, NUM_THREADS);
-  ofstream outFile(path + "csv/outputPandm.csv");
+  ofstream outFile(path + "csv/outputPaternal.csv");
   set<int> keys1;
   for (auto &it : map) {
     keys1.insert(it.first);

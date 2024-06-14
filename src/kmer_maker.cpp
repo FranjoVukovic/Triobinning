@@ -141,8 +141,6 @@ parallel_kmer(vector<unique_ptr<seq::Sequence>> &ref, unsigned int kmer_length,
   }
   thread_features.clear();
 
-  cout << "DONE" << endl;
-
   // Return the map of kmers and their counts
   return kmer_map;
 }
