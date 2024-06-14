@@ -16,50 +16,69 @@ parallel_finder(vector<unique_ptr<seq::Sequence>> &ref,
                 unsigned int kmer_length, unsigned int num_threads,
                 set<int> &difference1, set<int> &difference2) {
 
-  unordered_map<std::string, unsigned int> kmer_map;
+  // Create a thread pool
   vector<future<unordered_map<std::string, unsigned int>>> thread_features;
   shared_ptr<thread_pool::ThreadPool> thread_pool_ =
       make_shared<thread_pool::ThreadPool>(num_threads);
 
   const size_t part_size = ref.size() / num_threads;
 
+  // Make num_threads threads and 
   for (uint32_t i = 0; i < num_threads; ++i) {
     thread_features.emplace_back(
         thread_pool_->Submit([&ref, kmer_length, i, num_threads, part_size,
                               &difference1, &difference2]() {
+
+          // Get the part of the reference                      
           size_t start_idx = i * part_size;
-          size_t end_idx =
-              (i == num_threads - 1) ? ref.size() : (start_idx + part_size);
-          unordered_map<std::string, unsigned int> kmer_maps;
+          size_t end_idx = (i == num_threads - 1) ? ref.size() : (start_idx + part_size);
           vector<unique_ptr<seq::Sequence>> part_ref(
               make_move_iterator(ref.begin() + start_idx),
               make_move_iterator(ref.begin() + end_idx));
 
+          // Initialize the map
+          unordered_map<std::string, unsigned int> kmer_maps;
+
           for (auto &seq : part_ref) {
+            // Extract kmers from the read
             auto set = kmer_maker_set(seq->genome, kmer_length);
+            
             std::string name = seq->name;
+            int paternal = 0;
+            int maternal = 0;
+
+            // Compare the kmers with the parental kmers
             for (auto &it : set) {
               if (difference1.find(it) != difference1.end()) {
-                kmer_maps[name] = 0;
-                break;
+                paternal++;
               } else if (difference2.find(it) != difference2.end()) {
-                kmer_maps[name] = 1;
-                break;
-              } else {
-                kmer_maps[name] = 2;
-              }
+                maternal++;
+              } 
             }
+
+            // Assign the read to the parent with the most kmers
+            if (paternal == 0 && maternal == 0)
+              kmer_maps[name] = 0;       // Assign to unknown
+            else if (paternal > maternal)
+              kmer_maps[name] = 1;      // Assign to paternal
+            else if (maternal > paternal)
+              kmer_maps[name] = 2;      // Assign to maternal
+            else
+              kmer_maps[name] = 0;      // Assign to unknown
           }
 
           return kmer_maps;
         }));
   }
 
+  unordered_map<std::string, unsigned int> kmer_map;
+
+  // Combine the maps from the threads
   for (auto &thread_feature : thread_features) {
     auto thread_kmer_map = thread_feature.get();
     kmer_map.insert(thread_kmer_map.begin(), thread_kmer_map.end());
   }
-  cout << endl << "Number of kmers: " << kmer_map.size() << endl;
+  
   return kmer_map;
 }
 
