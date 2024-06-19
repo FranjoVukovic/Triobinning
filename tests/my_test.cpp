@@ -125,7 +125,7 @@ TEST(Classification, MultiThreded) {
       bioparser::Parser<seq::Sequence>::Create<bioparser::FastaParser>(pathRef3);
   auto ref3 = p3->Parse(-1);
 
-  auto myMap = kmer::parallel_finder(ref3, KMER_LENGTH, 4, diff, diff2);
+  auto myMap = kmer::parallel_finder(ref3, KMER_LENGTH, 4, diff, diff2, 1, 5);
 
   int paternal = 0;
   int maternal = 0;

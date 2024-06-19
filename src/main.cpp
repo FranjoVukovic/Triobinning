@@ -18,15 +18,45 @@ const string path =
     getenv("TRIOBINNING_PATH") ? getenv("TRIOBINNING_PATH") : ".";
 
 // Constants, adjust as needed
-const int KMER_LENGTH = 21;
-const int NUM_THREADS = 32;
+static unsigned int KMER_LENGTH = 21;
+static unsigned int NUM_THREADS = 21;
+static unsigned int MIN = 2;
+static unsigned int MID = 5;
 const string paternalName = "PATERNAL";
 const string maternalName = "MATERNAL";
 
-int main() {
+// Function for parsing the flags
+void parse_flags(int argc, char* argv[]) {
+  int c;
+  while ((c = getopt(argc, argv, "c:d:k:t:")) != -1) {
+    switch (c) {
+      case 'c':
+        MIN = std::stoi(optarg);
+        break;
+      case 'd':
+        MID = std::stoi(optarg);
+        break;
+      case 'k':
+        KMER_LENGTH = std::stoi(optarg);
+        break;
+      case 't':
+        NUM_THREADS = std::stoi(optarg);
+        break;
+      default:
+        std::cerr << "Usage: " << argv[0] << " [-c min_count] [-d mid_count] [-k kmer_length] [-t num_threads]\n";
+        exit(1);
+    }
+  }
+}
+
+
+int main(int argc, char* argv[]) {
+  // Parse the flags
+  parse_flags(argc, argv);
+
   // Path to the reference sequences, adjust as needed
-  string pathRef = path + "paternal.fasta";
-  string pathRef2 = path + "maternal.fasta";
+  string pathRef = path + "both1.fasta";
+  string pathRef2 = path + "both2.fasta";
   string pathRef3 = "/mnt/share1_Jabba/ftomas/ul_ec/ul_reads/subsampled/run2.output.filtered.subsampled.fasta";
 
   auto start = chrono::high_resolution_clock::now();
@@ -37,15 +67,15 @@ int main() {
 
   // Get all the kmers and write them to a file and a set
   auto map = kmer::parallel_kmer(ref, KMER_LENGTH, NUM_THREADS);
-  ofstream outFile(path + "csv/outputPaternal.csv");
+  //ofstream outFile(path + "csv/outputPaternal.csv");
   set<int> keys1;
   for (auto &it : map) {
     keys1.insert(it.first);
-    outFile << it.first << "," << it.second << endl;
+    //outFile << it.first << "," << it.second << endl;
   }
   map.clear();
   ref.clear();
-  outFile.close();
+  //outFile.close();
 
   // Read in the reference sequences and take out kmers
   auto p2 = bioparser::Parser<seq::Sequence>::Create<bioparser::FastaParser>(pathRef2);
@@ -53,15 +83,15 @@ int main() {
 
   // Get all the kmers and write them to a file and a set
   auto map2 = kmer::parallel_kmer(ref2, KMER_LENGTH, NUM_THREADS);
-  ofstream outFile2(path + "csv/outputMaternal.csv");
+  //ofstream outFile2(path + "csv/outputMaternal.csv");
   set<int> keys2;
   for (auto &it : map2) {
     keys2.insert(it.first);
-    outFile2 << it.first << "," << it.second << endl;
+    //outFile2 << it.first << "," << it.second << endl;
   }
   map2.clear();
   ref2.clear();
-  outFile2.close();
+  //outFile2.close();
 
   auto end = chrono::high_resolution_clock::now();
 
@@ -96,13 +126,14 @@ int main() {
   auto p3 = bioparser::Parser<seq::Sequence>::Create<bioparser::FastaParser>(pathRef3);
   auto ref3 = p3->Parse(-1);
 
-  auto myMap = kmer::parallel_finder(ref3, KMER_LENGTH, NUM_THREADS, diff, diff2);
+  auto myMap = kmer::parallel_finder(ref3, KMER_LENGTH, NUM_THREADS, diff, diff2, MIN, MID);
 
   int fakePaternal = 0;
   int realPaternal = 0;
   int fakeMaternal = 0;
   int realMaternal = 0;
   int unknown = 0;
+  int ambiguous = 0;
 
   for (auto &it : myMap) {
     // Get the name of the read
@@ -114,6 +145,8 @@ int main() {
         realPaternal++;
       } else if (it.second == 0){
         unknown++;
+      } else if (it.second == 3) {
+        ambiguous++;
       } else {
         fakePaternal++;
       }
@@ -122,8 +155,8 @@ int main() {
         realMaternal++;
       } else if (it.second == 0){
         unknown++;
-      } else if (it.second == 0){
-        unknown++;
+      } else if (it.second == 3) {
+        ambiguous++;
       } else {
         fakeMaternal++;
       }
@@ -131,7 +164,8 @@ int main() {
   }
 
   // Print out the results
-  cout << realPaternal << " " << fakePaternal << endl << fakeMaternal << " " << realMaternal << endl << unknown << endl;
+  cout << "KMER_LENGTH: " << KMER_LENGTH << endl;
+  cout << realPaternal << " " << fakePaternal << endl << fakeMaternal << " " << realMaternal << endl << unknown << " " << ambiguous << endl;
 
   auto end2 = chrono::high_resolution_clock::now();
   auto duration2 = chrono::duration_cast<chrono::seconds>(end2 - end).count();
